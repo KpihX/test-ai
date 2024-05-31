@@ -1,6 +1,36 @@
-from classes import User, Usecase, Category, Test, Question
-from gen_test_ai import GenTestAI
-from datas import USECASES, NUMB_LEVELS
+import sys
+
+from user import User
+from test import Usecase, Category, TestInd
+from test_ais import GenTestAI
+
+""" Datas """
+
+USECASES = [
+	{
+		"label": "Learn English",
+		"categories": [
+			{
+				"label": "Vocabulary",
+				"description": "Increase your vocabulary skills!",
+				"ex_context": "has just reached Yaoundé and is new in the city. \
+    				He starts a discussion with an M. Kpihx, an english speaking man, to know the directions to reach Polytech Yaoundé. \
+           			He will then have to test his vocabulary skills throught the discussion."
+			},
+			{
+				"label": "Grammar",
+				"description": "Increase your grammar skills!",
+				"ex_context": "has just reached Yaoundé and is new in the city. \
+    				He starts a discussion with an M. Kpihx, an english speaking man, to know the directions to reach Polytech Yaoundé. \
+           			He will then have to test his grammar skills throught the discussion."
+			}
+		],
+		"description": "This usecase aims to increases English skills!"
+	}
+]
+
+NUMB_LEVELS = 10
+MAX_NUM_TENT_TEST = 3
 
 class Game:
     def run(self):
@@ -12,16 +42,40 @@ class Game:
         usecase = Game.to_usecase(usecase_datas)
         category = usecase.categories[0]
         
-        print("Hi " + user.name + "! We are about to start a test in the category " + category.label + " of the usecase " + usecase.label + ".\n")
+        print("Hi " + user.name + "! We are about to start a test in the category '" + category.label + "' of the usecase '" + usecase.label + "'.\n")
         
-        gen_ai = GenTestAI(user, category)
+        gen_test_ai = GenTestAI(user, category)
         
-        for i in range(1, 4):
-            context, qcms = gen_ai.gen_next_test()
+        i = 0
+        score = 0
+        test_ind =  TestInd.CONT # We help to know if the user want to restart a test or no, or even continue with the next test
         
-            print(f"*Test {i}\n")
-            print(context, end = "\n\n")
-            print(qcms, end = "\n\n")
+        while i < NUMB_LEVELS:
+            if test_ind == TestInd.CONT:
+                num_tent_test = 0
+                test = gen_test_ai.gen_next_test()
+            elif test_ind == TestInd.REDO:
+                num_tent_test += 1
+                if num_tent_test > MAX_NUM_TENT_TEST:
+                    print("!You have reached the maximum number of tentatives.\n")
+                    break
+                
+                test = gen_test_ai.regen_test()
+            else: # test_ind = TestInd.ABAN
+                break
+            
+            if test == None:
+                print("!Sorry, we have difficulties to generate a coherent test! Try again later...\n")
+                sys.exit(-1)
+            
+            test_ind, test_score = test.run()
+            score += test_score
+            
+        user.score = score
+        user.level = gen_test_ai.test_level
+        print(f"Your total score is: '{score}'!\n")
+        print(f"Your actual level is: '{user.level}'!\n")
+                    
         
     def to_usecase(usecase_datas):
         categories = [Game.to_category(category_datas, None) for category_datas in usecase_datas["categories"]]
@@ -37,4 +91,5 @@ class Game:
     
 game = Game()
 
-game.run()
+if __name__ == "__main__":
+    game.run()
