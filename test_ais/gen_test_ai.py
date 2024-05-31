@@ -8,7 +8,7 @@ from .check_test_ai import CheckTestAI
 
 """ Datas """
 
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', "AIzaSyDuuizDPb4lJMwdxbSYFixMksmJ-Ov7Ljs")
 DEFAULT_MODEL = 'gemini-pro'
 MAX_GENERATION = 3
 NUM_QCM_PROPS = 3
