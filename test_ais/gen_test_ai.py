@@ -2,7 +2,7 @@ import google.generativeai as genai
 import os, sys, random
 # from pyswip import Prolog
 from user import User
-from test import Category, Test, QuestTypes, QCM, QRO,NUM_QUESTIONS_TEST
+from test import Category, Test, QuestTypes, QCM, QRO, NUM_QUESTIONS_TEST
 from .check_test_ai import CheckTestAI
 
 
@@ -10,7 +10,7 @@ from .check_test_ai import CheckTestAI
 
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', "AIzaSyDuuizDPb4lJMwdxbSYFixMksmJ-Ov7Ljs")
 DEFAULT_MODEL = 'gemini-pro'
-MAX_GENERATION = 3
+MAX_GENERATION = 5
 NUM_QCM_PROPS = 3
 QCM_FORMAT = f"question*number_correct_answer*prop1*..*prop{NUM_QCM_PROPS}"
 QCM_EX = "Which transport mean we you usually use in a city ?*3*Bus*Train*Taxi"
@@ -97,10 +97,11 @@ class GenTestAI:
                 generate (in one paragraph) a new context for this test (context must follow the form of the previous but must be different) of level {self.test_level} (next level), throught which I will be able to ask questions to test the learner skills in this context.\n"
             
         end = f"Generate only the context in the form of the previous. Don't add any conversation. And your context must used the same name {self.user.name} as in the {'example' if self.test_level == 1 else 'previous context'}."
-        
+        prompt = preambule + prompt + end
         try:
             print("We are generating the context ...\n")
-            answer = self.model.generate_content(preambule + prompt + end).text
+            # print("* prompt: ", prompt, "\n")
+            answer = self.model.generate_content(prompt).text
         except:
             print("!We are having issues with our distant generation model!\n", file=sys.stderr)
             return None
@@ -113,7 +114,7 @@ class GenTestAI:
             
             print("!No coherent context generated, retrying ...\n", file=sys.stderr)
             try:
-                answer = self.model.generate_content(preambule + prompt + end).text
+                answer = self.model.generate_content(prompt).text
             except:
                 print("!We are having issues with our distant generation model!\n", file=sys.stderr)
                 return None
@@ -224,4 +225,48 @@ class GenTestAI:
         qro = QRO(qro_datas[0], qro_datas[1])
         self.history += f"QRO{quest_numb}: "  + qro_str + "\n"
         return qro
+
+    def text_to_fact(self, text:str):
+        TEXT_FACT_FORMAT = "fact1.\n...factn.\n"
+        EX_TEXT_FACT_FORMAT = "garcon(paul).\nestmarie(paul).\netudie(marie, ens).\n"
+        prompt = f"Transform the input downstream into exhaustive prolog facts, so that a prolog program will be able with your response to enterely able to understand the input, and use it as a knownlegde base. There is the input: *{text}*. Your response must be in this format :{TEXT_FACT_FORMAT}. There is an example of a good response: {EX_TEXT_FACT_FORMAT}."
+        
+        try:
+            print("We are transforming the input into prolog facts ...\n")
+            # print("* prompt: ", prompt, "\n")
+            answer = self.model.generate_content(prompt).text
+        except:
+            print("!We are having issues with our distant generation model!\n", file=sys.stderr)
+            return None
+        
+        number_generation = 1
+        while not CheckTestAI.check_facts_format(answer):
+            print("* answer: ", answer, "\n")
+            if number_generation >= MAX_GENERATION:
+                print("!We are no more able to generate coherent transformation into prolog facts. Retry later!\n", file=sys.stderr)
+                return None
+            
+            print("!No coherent transformation generated, retrying ...\n", file=sys.stderr)
+            try:
+                answer = self.model.generate_content(prompt).text
+            except:
+                print("!We are having issues with our distant generation model!\n", file=sys.stderr)
+                return None
+            number_generation += 1
+            
+        return answer
+    
+if __name__ == "__main__":
+    from test import Usecase
+    from main import USECASES, Game
+    
+    user = User(1, 'KpihX', '1')
+    usecase_datas = USECASES[0]
+    usecase = Game.to_usecase(usecase_datas)
+    category = usecase.categories[1]    
+    gen_test_ai = GenTestAI(user, category)
+    
+    gen_test_ai.test_level = 1
+    print("context:", gen_test_ai.gen_next_context(), "\n")
+    print("facts:\n", gen_test_ai.text_to_fact(gen_test_ai.context), "\n", sep="")
     

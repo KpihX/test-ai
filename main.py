@@ -40,7 +40,7 @@ class Game:
         
         usecase_datas = USECASES[0]
         usecase = Game.to_usecase(usecase_datas)
-        category = usecase.categories[0]
+        category = usecase.categories[1]
         
         print("Hi " + user.name + "! We are about to start a test in the category '" + category.label + "' of the usecase '" + usecase.label + "'.\n")
         

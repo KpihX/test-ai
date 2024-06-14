@@ -24,7 +24,7 @@ class CheckTestAI:
     def check_qcm_format(cls, qcm_str:str):
         # print(f"* qm_str: {qcm_str}\n")
         file_path = CHECK_PROLOG_AI_PATH + "check_qcm_format.pl"
-        question = f"check_qcm_format('{qcm_str}', {NUM_QCM_PROPS})."
+        question = f"check_qcm_format('{CheckTestAI.str_prolog_form(qcm_str)}', {NUM_QCM_PROPS})."
         
         result = CheckTestAI.query_prolog(file_path, question)
         return result == "True"
@@ -35,7 +35,7 @@ class CheckTestAI:
             return False
         
         file_path = CHECK_PROLOG_AI_PATH + "check_qro.pl"
-        question = f"check_qro('{context}, ')."
+        question = f"check_qro('{CheckTestAI.str_prolog_form(context)}, ')."
         
         # result = query_prolog(file_path, question)
         # return result == "True"
@@ -45,7 +45,7 @@ class CheckTestAI:
     def check_qro_format(cls, qro_str:str):
         # print(f"* qm_str: {qro_str}\n")
         file_path = CHECK_PROLOG_AI_PATH + "check_qro_format.pl"
-        question = f"check_qro_format('{qro_str}')."
+        question = f"check_qro_format('{CheckTestAI.str_prolog_form(qro_str)}')."
         
         result = CheckTestAI.query_prolog(file_path, question)
         return result == "True"
@@ -60,9 +60,22 @@ class CheckTestAI:
         return True
     
     @classmethod
+    def check_facts_format(cls, qro_str:str):
+        # print(f"* qm_str: {qro_str}\n")
+        file_path = CHECK_PROLOG_AI_PATH + "check_facts_format.pl"
+        question = f"check_facts_format('{CheckTestAI.str_prolog_form(qro_str)}')."
+        
+        result = CheckTestAI.query_prolog(file_path, question)
+        return result == "True"
+    
+    @classmethod
+    def str_prolog_form(cls, string:str):
+        return string.replace("'", "_").replace("\"", "_")
+    
+    @classmethod
     def query_prolog(cls, file_path:str, question:str):
         command = f"swipl -s \"{file_path}\" -g \"{question}\" -t halt"
-        
+        # print("* Command: ", command)
         process = subprocess.run(command, shell=True, text=True, capture_output=True)
         
         if process.returncode != 0:
