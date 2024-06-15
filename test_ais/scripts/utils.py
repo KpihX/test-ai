@@ -32,7 +32,7 @@ def generate_prolog_predicates(csv_file, predicate_name):
         # Read the rest of the rows
         terms = [first_row] + [row for row in reader if row]
 
-    with open("./output.pl", mode="w") as file:
+    with open(f"./{predicate_name}_output.pl", mode="w") as file:
         for term in terms:
             # Sanitize each term
             sanitized_terms = [sanitize_term(t) for t in term]
